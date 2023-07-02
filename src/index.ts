@@ -3,21 +3,19 @@ import url from 'url'
 import { promises as fs } from 'fs'
 import { RequestMethod, UserData, UserRequestData } from './types'
 import { validateData } from './utils/validateData'
-import { v4 as uuid } from 'uuid'
+import { v4 as uuid, validate as isValidUUID } from 'uuid'
 import 'dotenv/config'
 
 const port = process.env.PORT || 8080
-const REGEX_PATH_WITH_ID = /^api\/users\/.*$/gi
-const REGEX_FOR_UUID = /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/gi
+const REGEX_PATH_WITH_ID = /^\/api\/users\/.+$/
 
 const startServer = async () => {
     const data = await fs.readFile("./src/users.json", "utf8")
-    const userData = JSON.parse(data) as UserData[]
+    let userData = JSON.parse(data) as UserData[]
 
     const server = http.createServer((req, res) => {
 
         const pathname = url.parse(req.url || '', true).pathname || ''
-
         if (pathname === '/api/users') {
             if (req.method === RequestMethod.GET) {
                 res.writeHead(200, { 'Content-Type': 'application/json' })
@@ -44,11 +42,12 @@ const startServer = async () => {
                     }
                 })
             }
+            res.end()
             return
         }
         else if (REGEX_PATH_WITH_ID.test(pathname)) {
-            const userId = pathname.replace('api/users/', '')
-            if (!REGEX_FOR_UUID.test(pathname)) {
+            const userId = pathname.replace('/api/users/', '')
+            if (!isValidUUID(userId)) {
                 const message = { message: `invalid id ${userId} has been provided.` }
                 res.writeHead(400, { 'Content-Type': 'application/json' })
                 res.end(JSON.stringify(message, null, 2))
@@ -73,15 +72,16 @@ const startServer = async () => {
                     const isDataValid = validateData(parsedData)
                     let updatedUser: UserData | undefined
                     if (isDataValid) {
-                        userData.map((user) => {
+                        const appliedData = userData.map((user) => {
                             if (user.id === userId) {
                                 updatedUser = { ...user, ...parsedData as UserRequestData }
                                 return updatedUser
                             }
                             return user
                         })
+                        userData = appliedData
 
-                        fs.writeFile('./src/users.json', JSON.stringify(userData, null, 2)).then(() => {
+                        fs.writeFile('./src/users.json', JSON.stringify(appliedData, null, 2)).then(() => {
                             res.writeHead(200, { 'Content-Type': 'application/json' })
                             res.end(JSON.stringify(updatedUser, null, 2))
                         }).catch((error) => {
@@ -97,6 +97,7 @@ const startServer = async () => {
                 })
             } else if (req.method === RequestMethod.DELETE) {
                 const updatedData = userData.filter(({ id }) => id !== userId)
+                userData = updatedData
                 fs.writeFile('./src/users.json', JSON.stringify(updatedData, null, 2)).then(() => {
                     res.writeHead(204, { 'Content-Type': 'application/json' })
                     res.end(`user with id ${userId} was deleted.`)
@@ -106,6 +107,7 @@ const startServer = async () => {
                     res.end(JSON.stringify(message, null, 2))
                 })
             }
+            res.end()
             return
         } else {
             res.writeHead(404, { 'Content-Type': 'application/json' })
