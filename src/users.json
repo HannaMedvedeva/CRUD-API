@@ -1,0 +1,36 @@
+[
+  {
+    "id": "1",
+    "username": "Naruto",
+    "age": 13,
+    "hobbies": [
+      "eat ramen",
+      "be friends with Saske"
+    ]
+  },
+  {
+    "id": "2",
+    "username": "Saske",
+    "age": 14,
+    "hobbies": [
+      "hate Naruto",
+      "hate Itachi",
+      "hate everyone"
+    ]
+  },
+  {
+    "id": "3",
+    "username": "Sakura",
+    "age": 15,
+    "hobbies": [
+      "love Saske",
+      "beat Naruto"
+    ]
+  },
+  {
+    "id": 4,
+    "username": "Kabuto",
+    "age": 33,
+    "hobbies": "kill people"
+  }
+]
